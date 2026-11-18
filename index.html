@@ -135,7 +135,8 @@ nav a:hover{opacity:1;border-bottom:0}
 .hero-art{max-width:1100px;margin:56px auto 0;border-radius:28px 28px 0 0;overflow:hidden;line-height:0}
 .hero-art{position:relative}
 .hero-art svg{width:100%;height:auto;display:block}
-.hero-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
+.hero-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;opacity:0;transition:opacity .5s}
+.hero-photo.on{opacity:1}
 section{max-width:1200px}
 h2{font-family:var(--display);font-weight:700;font-size:clamp(28px,4vw,40px);letter-spacing:-.025em}
 .tiles{gap:12px}
@@ -157,17 +158,27 @@ footer{background:#f5f5f7;color:#6e6e73;margin-top:96px}
   .tile{min-height:480px;padding:36px 16px 0}
   .tile .vis{height:240px;font-size:96px}
 }
+
+/* ===== 푸터 (쇼핑몰 스타일) ===== */
+footer{background:#f5f5f5;color:#8b8b8b;margin-top:96px;padding:40px 32px 56px;border-top:1px solid #e5e5e5;font-size:12px}
+.foot{max-width:1200px;margin:0 auto;display:block}
+.f-links{display:flex;flex-wrap:wrap;gap:8px 0}
+.f-links a{display:inline-block;font-size:13px;font-weight:700;color:#1d1d1f;padding:0 14px}
+.f-links a:first-child{padding-left:0}
+.f-links a+a{border-left:1px solid #d4d4d4}
+.f-links a:hover{text-decoration:underline}
+.f-sns{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.f-sns a{display:inline-block;padding:8px 16px;border:1px solid #d4d4d4;border-radius:999px;background:#fff;color:#1d1d1f;font-size:12px;font-weight:500}
+.f-sns a:hover{border-color:#1d1d1f;text-decoration:none}
+.f-copy{margin-top:24px;padding-top:20px;border-top:1px solid #e0e0e0;line-height:1.7}
+@media (max-width:760px){footer{padding:32px 16px 48px}}
 </style>
 </head>
 <body>
 
-<div class="topbar" id="topbar"></div>
-
 <header>
   <div class="bar">
     <a class="logo" href="#top" id="logo"></a>
-    <nav id="nav" aria-label="주 메뉴"></nav>
-    <span class="side" id="owner"></span>
   </div>
 </header>
 
@@ -177,9 +188,8 @@ footer{background:#f5f5f7;color:#6e6e73;margin-top:96px}
       <h1 id="heroTitle"></h1>
       <div class="btns">
         <a class="btn" href="#menus">둘러보기</a>
-        <a class="btn ghost" href="#contact">연락하기</a>
       </div>
-      <div class="hero-art"><img class="hero-photo" src="img/hero.jpg" alt="" onerror="this.remove()"><svg viewBox="0 0 1100 420" preserveAspectRatio="xMidYMax slice" role="img" aria-label="산과 해가 있는 풍경 일러스트"><defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd6a5"/><stop offset="1" stop-color="#fff4e6"/></linearGradient></defs><rect width="1100" height="420" fill="url(#sk)"/><circle cx="780" cy="150" r="64" fill="#ff9f6b"/><path d="M0 420V280L170 170L320 270L510 100L740 290L890 200L1100 340V420Z" fill="#6c8f7a"/><path d="M0 420V350L200 250L400 330L620 220L860 340L1100 270V420Z" fill="#3f6b57"/></svg></div>
+      <div class="hero-art"><img class="hero-photo" id="heroPhoto" alt=""><svg viewBox="0 0 1100 420" preserveAspectRatio="xMidYMax slice" role="img" aria-label="산과 해가 있는 풍경 일러스트"><defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd6a5"/><stop offset="1" stop-color="#fff4e6"/></linearGradient></defs><rect width="1100" height="420" fill="url(#sk)"/><circle cx="780" cy="150" r="64" fill="#ff9f6b"/><path d="M0 420V280L170 170L320 270L510 100L740 290L890 200L1100 340V420Z" fill="#6c8f7a"/><path d="M0 420V350L200 250L400 330L620 220L860 340L1100 270V420Z" fill="#3f6b57"/></svg></div>
     </div>
   </div>
 
@@ -215,9 +225,9 @@ footer{background:#f5f5f7;color:#6e6e73;margin-top:96px}
 
 <footer id="contact">
   <div class="foot">
-    <div><b id="fname"></b><span id="fmail"></span></div>
-    <div id="fmenus"><b>메뉴</b></div>
-    <div id="flinks"><b>링크</b></div>
+    <div class="f-links" id="fmenus"></div>
+    <div class="f-sns" id="flinks"></div>
+    <p class="f-copy" id="fcopy"></p>
   </div>
 </footer>
 
@@ -226,11 +236,10 @@ footer{background:#f5f5f7;color:#6e6e73;margin-top:96px}
 const SITE = {
   name: "MY PICKS",
   owner: "홍길동",
-  email: "hello@example.com",
   notice: "새 글과 장소를 계속 추가하는 중입니다",
   heroTitle: "기억을 모아두는 곳",
   heroText: "맛집, 여행, 스포츠, 쇼핑까지. 직접 다니고 써본 것만 모아둔 개인 공간입니다.",
-  links: [ {t:"인스타그램", u:"#"}, {t:"유튜브", u:"#"}, {t:"블로그", u:"#"} ]
+  links: [ {t:"인스타그램", u:"#"} ]  /* u의 "#"을 본인 인스타그램 주소로 바꾸세요 (예: "https://www.instagram.com/아이디") */
 };
 
 /* 메뉴: 추가·삭제·이름 변경은 이 목록만 수정하면 됩니다.
@@ -256,14 +265,9 @@ const PHOTOS = {food:"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAM
 const bg = m => { const u = m.img || PHOTOS[m.id]; return u ? `background-image:url('${u}')` : `background:${m.color}`; };
 
 document.title = SITE.name;
-$("topbar").textContent = SITE.notice;
 $("logo").textContent = SITE.name;
-$("owner").textContent = SITE.owner;
 $("heroTitle").textContent = SITE.heroTitle;
-$("fname").textContent = SITE.name;
-$("fmail").innerHTML = `<a href="mailto:${SITE.email}">${SITE.email}</a>`;
-
-$("nav").innerHTML = MENUS.map(m => `<a href="#${m.id}">${m.name}</a>`).join("");
+$("fcopy").textContent = `© ${new Date().getFullYear()} ${SITE.name}. All rights reserved.`;
 
 const ICON = { food:"🍜", mountain:"⛰️", sports:"⚽", shopping:"🛍️" };
 const vis = m => `background:url('${m.img || PHOTOS[m.id] || "img/" + m.id + ".jpg"}') center/cover no-repeat,radial-gradient(circle at 50% 45%,${m.color}cc,${m.color}33 65%,transparent 80%)`;
@@ -281,13 +285,13 @@ $("rail").innerHTML = LATEST.map(l => {
     <b>${l.title}</b><span>${m.name} · ${l.sub}</span></a>`;
 }).join("");
 
-$("fmenus").innerHTML += MENUS.map(m => `<a href="#${m.id}">${m.name}</a>`).join("");
-$("flinks").innerHTML += SITE.links.map(l => `<a href="${l.u}">${l.t}</a>`).join("");
+$("fmenus").innerHTML = MENUS.map(m => `<a href="#${m.id}">${m.name}</a>`).join("");
+$("flinks").innerHTML = SITE.links.map(l => `<a href="${l.u}"${l.u === "#" ? "" : ' target="_blank" rel="noopener"'}>${l.t} ↗</a>`).join("");
 </script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js";
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, where, query, orderBy, limit, onSnapshot, serverTimestamp }
+import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, where, query, orderBy, limit, onSnapshot, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
 
 /* 글 저장·수정·삭제용 비밀번호. 비밀번호 자체가 아니라 SHA-256 해시를 넣습니다.
@@ -308,6 +312,23 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const $ = id => document.getElementById(id);
+
+/* ===== 히어로 사진: 새로고침할 때마다 랜덤 =====
+   기본 카테고리 사진 4장 + 올려둔 글의 사진(최근 20개) 중에서 한 장을 고릅니다.
+   불러오지 못하면 기본 4장 중에서만 고르고, 사진이 뜨기 전에는 일러스트가 보입니다. */
+(async () => {
+  const pool = Object.values(PHOTOS);
+  try {
+    const snap = await Promise.race([
+      getDocs(query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(20))),
+      new Promise((_, no) => setTimeout(no, 2500))
+    ]);
+    snap.forEach(d => { const u = d.data().imageData; if (u) pool.push(u); });
+  } catch {}
+  const img = $("heroPhoto");
+  img.onload = () => img.classList.add("on");
+  img.src = pool[Math.floor(Math.random() * pool.length)];
+})();
 
 /* ===== 메뉴별 보기 + 비밀번호 확인 ===== */
 const sha256 = async s => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)))].map(x => x.toString(16).padStart(2, "0")).join("");
