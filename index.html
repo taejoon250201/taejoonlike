@@ -72,6 +72,30 @@ h2{font-family:var(--display);font-weight:500;font-size:28px;margin-bottom:24px}
 .gb li small{color:var(--muted);margin-left:8px}
 .gb li p{margin-top:4px;white-space:pre-wrap;word-break:break-word}
 
+#cat{display:none}main.is-cat>*{display:none}main.is-cat>#cat{display:block}
+.back{font-size:14px;color:var(--muted)}
+#cat h2{font-size:clamp(36px,6vw,72px);font-weight:700;margin:12px 0 4px;text-transform:uppercase}
+.tabs{display:flex;gap:8px;margin:20px 0}
+.tabs button{border:1px solid var(--line);background:#fff;padding:8px 20px;border-radius:999px;font:500 14px var(--body);cursor:pointer}
+.tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.pf{display:grid;gap:10px;max-width:640px;margin:16px 0 32px;padding:20px;background:var(--grey)}
+.pf[hidden]{display:none}
+.pf input,.pf textarea,.pf select{font:inherit;padding:12px;border:1px solid var(--line);border-radius:8px;width:100%;background:#fff;color:var(--ink)}
+.pf textarea{min-height:120px}
+.pf .row{display:flex;gap:8px}
+.pf button,.adm button{border:0;cursor:pointer;background:var(--ink);color:#fff;padding:9px 20px;border-radius:999px;font:500 13px var(--body)}
+.adm{margin-top:12px;display:flex;gap:6px}
+.v-card{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.v-gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px}
+.v-post{max-width:720px}
+.pc{border:1px solid var(--line);padding:20px}
+.pc h3,.pp h3{font-weight:500;font-size:18px}
+.meta{font-size:13px;color:var(--muted)}
+.g{aspect-ratio:1;background-size:cover;background-position:center;color:#fff;display:flex;flex-direction:column;justify-content:flex-end;padding:14px;font-weight:500}
+.pp{padding:28px 0;border-top:1px solid var(--line)}
+.pp p,.pc p{margin-top:8px;white-space:pre-wrap;word-break:break-word}
+.pp img,.pc img{max-width:100%;margin-top:12px}
+
 footer{margin-top:96px;background:var(--ink);color:#aaa;padding:48px 32px;font-size:13px}
 .foot{max-width:1440px;margin:0 auto;display:flex;flex-wrap:wrap;gap:32px 64px;justify-content:space-between}
 .foot b{display:block;color:#fff;font-size:14px;margin-bottom:10px;font-weight:500}
@@ -133,6 +157,24 @@ footer{margin-top:96px;background:var(--ink);color:#aaa;padding:48px 32px;font-s
     </form>
     <ul id="gbList"></ul>
   </section>
+
+  <section id="cat">
+    <a class="back" href="#top">← 홈으로</a>
+    <h2 id="ctitle"></h2>
+    <p id="cdesc" class="meta"></p>
+    <div class="tabs" id="tabs">
+      <button data-m="card" class="on">카드</button><button data-m="gal">갤러리</button><button data-m="post">글</button>
+    </div>
+    <form id="pf" class="pf">
+      <input id="ptitle" maxlength="100" placeholder="제목 (예: 가게 이름, 산 이름)" required>
+      <div class="row"><input id="pplace" maxlength="60" placeholder="지역"><select id="prate" aria-label="별점"><option value="0">별점 없음</option><option value="5">★★★★★</option><option value="4">★★★★</option><option value="3">★★★</option><option value="2">★★</option><option value="1">★</option></select></div>
+      <textarea id="pbody" maxlength="5000" placeholder="내용"></textarea>
+      <input id="pimg" type="file" accept="image/*" aria-label="사진">
+      <div class="row"><button type="submit" id="psave">저장</button><button type="button" id="pcancel" hidden>수정 취소</button></div>
+    </form>
+    <div class="status" id="pstatus" role="status"></div>
+    <div id="posts"></div>
+  </section>
 </main>
 
 <footer id="contact">
@@ -140,6 +182,7 @@ footer{margin-top:96px;background:var(--ink);color:#aaa;padding:48px 32px;font-s
     <div><b id="fname"></b><span id="fmail"></span></div>
     <div id="fmenus"><b>메뉴</b></div>
     <div id="flinks"><b>링크</b></div>
+    <div><a href="#" id="authLink">관리자 로그인</a></div>
   </div>
 </footer>
 
@@ -188,7 +231,7 @@ $("fmail").innerHTML = `<a href="mailto:${SITE.email}">${SITE.email}</a>`;
 $("nav").innerHTML = MENUS.map(m => `<a href="#${m.id}">${m.name}</a>`).join("") + `<a href="#guestbook">방명록</a>`;
 
 $("tiles").innerHTML = MENUS.map(m => `
-  <article class="tile" id="${m.id}" style="${bg(m)}">
+  <article class="tile" id="t-${m.id}" style="${bg(m)}">
     <h3>${m.title}</h3>
     <p>${m.desc}</p>
     <a class="btn" href="#${m.id}">보러가기</a>
@@ -207,8 +250,12 @@ $("flinks").innerHTML += SITE.links.map(l => `<a href="${l.u}">${l.t}</a>`).join
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js";
-import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp }
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, where, query, orderBy, limit, onSnapshot, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
+
+const OWNER_EMAIL = "내이메일@gmail.com"; /* 본인 구글 이메일로 바꾸세요 */
 
 const firebaseConfig = {
   apiKey: "AIzaSyCDp6BDhDarejmFfA092yZJ3ZLLofh5z0Q",
@@ -219,7 +266,8 @@ const firebaseConfig = {
   appId: "1:200711531899:web:4d4653fc64bc49ddeda1de"
 };
 
-const db = getFirestore(initializeApp(firebaseConfig));
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 const col = collection(db, "guestbook");
 const $ = id => document.getElementById(id);
 const status = $("gbStatus"), list = $("gbList");
@@ -250,6 +298,106 @@ $("gbForm").addEventListener("submit", async e => {
     status.textContent = "글을 등록하지 못했어요. Firestore 규칙이 게시됐는지 확인해주세요.";
   } finally { $("gbBtn").disabled = false; }
 });
+
+/* ===== 메뉴별 보기 + 관리자 로그인 ===== */
+const auth = getAuth(app);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const stars = n => n ? "★".repeat(n) + "☆".repeat(5 - n) : "";
+let user = null, cat = null, mode = "card", posts = [], editing = null, unsub = null;
+const isOwner = () => !!user && user.email === OWNER_EMAIL;
+
+const shrink = f => new Promise((ok, no) => {
+  const i = new Image();
+  i.onload = () => {
+    const w = Math.min(900, i.width), h = i.height * w / i.width, c = document.createElement("canvas");
+    c.width = w; c.height = h; c.getContext("2d").drawImage(i, 0, 0, w, h);
+    let q = .75, s;
+    do { s = c.toDataURL("image/jpeg", q); q -= .1; } while (s.length > 380000 && q > .2);
+    ok(s);
+  };
+  i.onerror = no; i.src = URL.createObjectURL(f);
+});
+
+function render() {
+  const m = MENUS.find(x => x.id === cat); if (!m) return;
+  const box = $("posts"); box.className = "v-" + mode;
+  $("pstatus").textContent = posts.length ? "" : "아직 올라온 내용이 없어요.";
+  const adm = p => isOwner() ? `<div class="adm"><button data-edit="${p.id}">수정</button><button data-del="${p.id}">삭제</button></div>` : "";
+  const meta = p => `<div class="meta">${esc(p.place)} ${stars(p.rating)}</div>`;
+  box.innerHTML = posts.map(p => {
+    if (mode === "gal") {
+      const img = p.imageData ? `url('${p.imageData}')` : m.color;
+      const bgs = p.imageData ? `background-image:linear-gradient(transparent 50%,rgba(0,0,0,.6)),${img}` : `background:linear-gradient(transparent 50%,rgba(0,0,0,.4)),${img}`;
+      return `<div class="g" style="${bgs}">${esc(p.title)}<span class="meta" style="color:#ddd">${esc(p.place)}</span>${adm(p)}</div>`;
+    }
+    if (mode === "post") return `<article class="pp"><h3>${esc(p.title)}</h3>${meta(p)}${p.imageData ? `<img src="${p.imageData}" alt="">` : ""}<p>${esc(p.body)}</p>${adm(p)}</article>`;
+    return `<article class="pc"><h3>${esc(p.title)}</h3>${meta(p)}<p>${esc((p.body || "").slice(0, 60))}</p>${adm(p)}</article>`;
+  }).join("");
+}
+
+function openCat(id) {
+  const m = MENUS.find(x => x.id === id); cat = id;
+  $("ctitle").textContent = m.title; $("cdesc").textContent = m.desc;
+  unsub && unsub(); resetForm();
+  unsub = onSnapshot(query(collection(db, "posts"), where("category", "==", id)), s => {
+    posts = s.docs.map(d => ({ id: d.id, ...d.data({ serverTimestamps: "estimate" }) }))
+      .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    render();
+  }, () => { $("pstatus").textContent = "불러오지 못했어요. Firestore 규칙이 게시됐는지 확인해주세요."; });
+}
+
+function resetForm() { editing = null; $("pf").reset(); $("pcancel").hidden = true; $("psave").textContent = "저장"; }
+
+$("tabs").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  mode = b.dataset.m;
+  [...$("tabs").children].forEach(x => x.classList.toggle("on", x === b)); render();
+});
+
+$("posts").addEventListener("click", async e => {
+  const ed = e.target.dataset.edit, del = e.target.dataset.del;
+  if (ed) {
+    editing = posts.find(p => p.id === ed);
+    $("ptitle").value = editing.title; $("pplace").value = editing.place || "";
+    $("prate").value = editing.rating || 0; $("pbody").value = editing.body || "";
+    $("pcancel").hidden = false; $("psave").textContent = "수정 저장"; $("pf").scrollIntoView();
+  }
+  if (del && confirm("이 글을 삭제할까요?")) {
+    try { await deleteDoc(doc(db, "posts", del)); } catch { $("pstatus").textContent = "삭제하지 못했어요. 로그인 상태를 확인해주세요."; }
+  }
+});
+$("pcancel").onclick = resetForm;
+
+$("pf").addEventListener("submit", async e => {
+  e.preventDefault(); $("psave").disabled = true;
+  try {
+    const f = $("pimg").files[0];
+    const data = { category: cat, title: $("ptitle").value.trim(), place: $("pplace").value.trim(),
+      rating: +$("prate").value, body: $("pbody").value.trim(),
+      imageData: f ? await shrink(f) : (editing?.imageData || "") };
+    if (editing) await updateDoc(doc(db, "posts", editing.id), data);
+    else await addDoc(collection(db, "posts"), { ...data, createdAt: serverTimestamp() });
+    resetForm();
+  } catch { $("pstatus").textContent = "저장하지 못했어요. 로그인 계정과 Firestore 규칙을 확인해주세요."; }
+  finally { $("psave").disabled = false; }
+});
+
+onAuthStateChanged(auth, u => {
+  user = u; $("authLink").textContent = u ? "로그아웃" : "관리자 로그인";
+  render();
+});
+$("authLink").addEventListener("click", e => {
+  e.preventDefault();
+  user ? signOut(auth) : signInWithPopup(auth, new GoogleAuthProvider()).catch(() => alert("로그인하지 못했어요. Firebase 승인된 도메인 설정을 확인해주세요."));
+});
+
+function route() {
+  const h = location.hash.slice(1), m = MENUS.find(x => x.id === h);
+  document.querySelector("main").classList.toggle("is-cat", !!m);
+  if (m) { openCat(m.id); scrollTo(0, 0); }
+  else { unsub && unsub(); unsub = null; if (h) document.getElementById(h)?.scrollIntoView(); }
+}
+addEventListener("hashchange", route); route();
 </script>
 </body>
 </html>
